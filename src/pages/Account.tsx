@@ -37,147 +37,148 @@ const Account = () => {
   const [activeTab, setActiveTab] = useState<"personal" | "billing" | "security">("personal")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [searchParams] = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-  const [details, setDetails] = useState(null);
+  const [searchParams] = useSearchParams()
+  const sessionId = searchParams.get("session_id")
+  const [details, setDetails] = useState(null)
   const { customerData } = useAuth()
   console.log(customerData)
   useEffect(() => {
     const verifyAndUpdateSubscription = async () => {
       try {
         if (!sessionId) {
-          throw new Error('No session ID provided');
+          throw new Error("No session ID provided")
         }
 
-        console.log('Verifying session:', sessionId);
+        console.log("Verifying session:", sessionId)
 
         // 1. First try the endpoint to see what we're working with
-        const debugResponse = await fetch(`http://localhost:8080/api/payments/stripe/verify?session_id=${sessionId}`);
-        const debugData = await debugResponse.json();
-        console.log('Debug session data:', debugData);
-        setDetails(debugData);
+        const debugResponse = await fetch(`http://localhost:8080/api/payments/stripe/verify?session_id=${sessionId}`)
+        const debugData = await debugResponse.json()
+        console.log("Debug session data:", debugData)
+        setDetails(debugData)
 
         if (!debugResponse.ok) {
-          throw new Error(`Debug failed: ${debugData.error || 'Unknown error'}`);
+          throw new Error(`Debug failed: ${debugData.error || "Unknown error"}`)
         }
 
         // 2. Get current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw new Error('User not authenticated');
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser()
+        if (userError || !user) throw new Error("User not authenticated")
 
         // 3. Alternative approach: Verify the payment status directly
         // Instead of relying on backend processing, update based on session data
-        if (debugData.payment_status === 'paid') {
+        if (debugData.payment_status === "paid") {
           // Try to extract subscription data from debug info
-          const subscriptionId = debugData.subscription_value;
-          const customerId = debugData.customer_value;
+          const subscriptionId = debugData.subscription_value
+          const customerId = debugData.customer_value
 
           if (!subscriptionId || !customerId) {
-            throw new Error('Missing subscription or customer ID in session');
+            throw new Error("Missing subscription or customer ID in session")
           }
 
           // Assume monthly plan if we can't determine from session
-          const planType = debugData.metadata?.interval || 'monthly';
+          const planType = debugData.metadata?.interval || "monthly"
 
           // Get current date plus 30 days as fallback for period end
-          const fallbackPeriodEnd = new Date();
-          fallbackPeriodEnd.setDate(fallbackPeriodEnd.getDate() + 30);
+          const fallbackPeriodEnd = new Date()
+          fallbackPeriodEnd.setDate(fallbackPeriodEnd.getDate() + 30)
 
           // First check if subscription exists
           const { data: existingSub, error: fetchError1 } = await supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('stripe_subscription_id', subscriptionId)
-            .maybeSingle();
+            .from("subscriptions")
+            .select("*")
+            .eq("stripe_subscription_id", subscriptionId)
+            .maybeSingle()
 
-          if (fetchError1) throw fetchError1;
+          if (fetchError1) throw fetchError1
 
           if (existingSub) {
             // Update existing record
             const { error: updateError } = await supabase
-              .from('subscriptions')
+              .from("subscriptions")
               .update({
                 user_id: user.id,
                 stripe_customer_id: customerId,
                 plan_id: planType,
-                status: 'active',
+                status: "active",
                 current_period_end: new Date(fallbackPeriodEnd).toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
               })
-              .eq('stripe_subscription_id', subscriptionId);
+              .eq("stripe_subscription_id", subscriptionId)
 
-            if (updateError) throw updateError;
+            if (updateError) throw updateError
           } else {
             // Insert new record
-            const { error: insertError } = await supabase
-              .from('subscriptions')
-              .insert({
-                user_id: user.id,
-                stripe_subscription_id: subscriptionId,
-                stripe_customer_id: customerId,
-                plan_id: planType,
-                status: 'active',
-                current_period_end: new Date(fallbackPeriodEnd).toISOString(),
-                updated_at: new Date().toISOString()
-              });
+            const { error: insertError } = await supabase.from("subscriptions").insert({
+              user_id: user.id,
+              stripe_subscription_id: subscriptionId,
+              stripe_customer_id: customerId,
+              plan_id: planType,
+              status: "active",
+              current_period_end: new Date(fallbackPeriodEnd).toISOString(),
+              updated_at: new Date().toISOString(),
+            })
 
-            if (insertError) throw insertError;
+            if (insertError) throw insertError
           }
 
           // Get current date
-          const currentDate = new Date();
+          const currentDate = new Date()
 
           // Calculate end date (30 days for monthly, 365 days for yearly)
-          const endDate = new Date(currentDate);
-          if (planType === 'yearly') {
-            endDate.setFullYear(endDate.getFullYear() + 1);
+          const endDate = new Date(currentDate)
+          if (planType === "yearly") {
+            endDate.setFullYear(endDate.getFullYear() + 1)
           } else {
-            endDate.setDate(endDate.getDate() + 30);
+            endDate.setDate(endDate.getDate() + 30)
           }
 
           // Check if customer record exists
           const { data: existingCustomer, error: customerCheckError } = await supabase
-            .from('customers')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
+            .from("customers")
+            .select("*")
+            .eq("user_id", user.id)
+            .single()
 
           if (customerCheckError) {
-            console.error('Error checking for customer:', customerCheckError);
-            throw customerCheckError;
+            console.error("Error checking for customer:", customerCheckError)
+            throw customerCheckError
           }
 
           // Prepare the subscription data update
           const updatedSubscriptionData = {
-            plan: planType === 'yearly' ? 'pro_yearly' : 'pro_monthly',
+            plan: planType === "yearly" ? "pro_yearly" : "pro_monthly",
             startDate: new Date().toISOString(),
             endDate: endDate.toISOString(),
             autoRenew: true,
-            paymentMethod: 'stripe',
-          };
+            paymentMethod: "stripe",
+          }
 
           // Validate subscription_status value
-          const subscriptionStatus = debugData.payment_status === 'paid' ? 'active' : 'inactive';
-          const subscriptionTier = planType === 'yearly' ? 'pro_yearly' : 'pro_monthly';
+          const subscriptionStatus = debugData.payment_status === "paid" ? "active" : "inactive"
+          const subscriptionTier = planType === "yearly" ? "pro_yearly" : "pro_monthly"
 
           // Update or insert customer record
           if (existingCustomer) {
             // Update existing customer
             const { data: updatedCustomer, error: updateCustomerError } = await supabase
-              .from('customers')
+              .from("customers")
               .update({
                 subscription_status: subscriptionStatus, // Ensure this is valid
                 subscription_tier: subscriptionTier,
                 subscription_data: updatedSubscriptionData,
               })
-              .eq('user_id', user.id)
+              .eq("user_id", user.id)
               .select()
-              .single(); // Ensure the query returns a single object
+              .single() // Ensure the query returns a single object
 
             if (updateCustomerError) {
-              console.error('Error updating customer:', updateCustomerError);
+              console.error("Error updating customer:", updateCustomerError)
             }
-            console.log('success:', updatedCustomer);
+            console.log("success:", updatedCustomer)
             // Send welcome email
             if (updatedCustomer?.email || updatedCustomer?.full_name || updatedCustomer?.subscription_tier) {
               const response = await fetch("http://localhost:8080/api/emails/transaction", {
@@ -189,45 +190,40 @@ const Account = () => {
                   email: updatedCustomer?.email,
                   name: updatedCustomer?.full_name,
                   plan: updatedCustomer?.subscription_tier,
-                  amount: updatedCustomer?.subscription_tier == "pro_yearly" ? "$25" : "$49"
-
+                  amount: updatedCustomer?.subscription_tier == "pro_yearly" ? "$25" : "$49",
                 }),
-              });
+              })
             }
-
           } else {
             // Insert new customer record
-            const { error: insertCustomerError } = await supabase
-              .from('customers')
-              .insert({
-                user_id: user.id,
-                subscription_status: subscriptionStatus,
-                subscription_tier: subscriptionTier,
-                subscription_data: updatedSubscriptionData,
-                created_at: new Date().toISOString(),
-              });
+            const { error: insertCustomerError } = await supabase.from("customers").insert({
+              user_id: user.id,
+              subscription_status: subscriptionStatus,
+              subscription_tier: subscriptionTier,
+              subscription_data: updatedSubscriptionData,
+              created_at: new Date().toISOString(),
+            })
 
             if (insertCustomerError) {
-              console.error('Error creating customer record:', insertCustomerError);
-              throw insertCustomerError;
+              console.error("Error creating customer record:", insertCustomerError)
+              throw insertCustomerError
             }
-            console.log('New customer record created successfully');
+            console.log("New customer record created successfully")
           }
 
-          navigate('/dashboard');
-          setLoading(false);
+          navigate("/dashboard")
+          setLoading(false)
         } else {
-          throw new Error(`Payment not completed. Status: ${debugData.payment_status}`);
+          throw new Error(`Payment not completed. Status: ${debugData.payment_status}`)
         }
-
       } catch (err) {
-        console.error('Subscription update error:', err);
-        setLoading(false);
+        console.error("Subscription update error:", err)
+        setLoading(false)
       }
-    };
+    }
 
-    verifyAndUpdateSubscription();
-  }, [sessionId, navigate]);
+    verifyAndUpdateSubscription()
+  }, [sessionId, navigate])
 
   // console.log("this is details", details)
   // User data state
@@ -241,10 +237,7 @@ const Account = () => {
     },
   })
 
-
-  useEffect(() => {
-
-  }, [])
+  useEffect(() => {}, [])
   // Subscription and payment data
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
@@ -498,8 +491,9 @@ const Account = () => {
               <div className="p-2">
                 <button
                   onClick={() => setActiveTab("personal")}
-                  className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-sm ${activeTab === "personal" ? "bg-orange-100 text-orange-500" : "text-gray-600 hover:bg-gray-50"
-                    }`}
+                  className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-sm ${
+                    activeTab === "personal" ? "bg-orange-100 text-orange-500" : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <User size={18} />
@@ -510,8 +504,9 @@ const Account = () => {
 
                 <button
                   onClick={() => setActiveTab("billing")}
-                  className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-sm ${activeTab === "billing" ? "bg-orange-100 text-orange-500" : "text-gray-600 hover:bg-gray-50"
-                    }`}
+                  className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-sm ${
+                    activeTab === "billing" ? "bg-orange-100 text-orange-500" : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <CreditCard size={18} />
@@ -522,8 +517,9 @@ const Account = () => {
 
                 <button
                   onClick={() => setActiveTab("security")}
-                  className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-sm ${activeTab === "security" ? "bg-orange-100 text-orange-500" : "text-gray-600 hover:bg-gray-50"
-                    }`}
+                  className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-sm ${
+                    activeTab === "security" ? "bg-orange-100 text-orange-500" : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <Lock size={18} />
@@ -561,7 +557,7 @@ const Account = () => {
                       : "You are currently on the Free plan"}
                   </p>
                 </div>
-                {(customerData?.subscription_status !== "active") && (
+                {customerData?.subscription_status !== "active" && (
                   <button
                     onClick={() => navigate("/pricing")}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -704,29 +700,28 @@ const Account = () => {
                                 </td>
                                 <td className="py-4">
                                   <span
-                                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${customerData?.subscription_status === "active"
-                                      ? "bg-green-100 text-green-800"
-                                      : customerData?.subscription_status === "inactive"
-                                        ? "bg-red-100 text-red-800"
-                                        : "bg-yellow-100 text-yellow-800"
-                                      }`}
+                                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                      customerData?.subscription_status === "active"
+                                        ? "bg-green-100 text-green-800"
+                                        : customerData?.subscription_status === "inactive"
+                                          ? "bg-red-100 text-red-800"
+                                          : "bg-yellow-100 text-yellow-800"
+                                    }`}
                                   >
                                     {customerData?.subscription_tier
-                                      ? customerData.subscription_tier.charAt(0).toUpperCase() + customerData.subscription_tier.slice(1)
+                                      ? customerData.subscription_tier.charAt(0).toUpperCase() +
+                                        customerData.subscription_tier.slice(1)
                                       : "N/A"}
                                   </span>
                                 </td>
                                 <td className="py-4 text-sm text-gray-900">
                                   {customerData.subscription_tier == "pro_yearly" ? "$25" : "$49"}
                                 </td>
-                                <td className="py-4 text-sm text-gray-900">
-                                  {customerData.subscription_status}
-                                </td>
+                                <td className="py-4 text-sm text-gray-900">{customerData.subscription_status}</td>
                               </tr>
                             </tbody>
                           </table>
                         </div>
-
                       ) : (
                         <div className="text-center py-8">
                           <p className="text-gray-500 mb-2">No billing history available</p>
@@ -791,19 +786,6 @@ const Account = () => {
                       )}
                     </button>
                   </form>
-                </div>
-
-                {/* Two-Factor Authentication */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Two-Factor Authentication</h3>
-                      <p className="text-gray-600">Add an extra layer of security to your account</p>
-                    </div>
-                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      Enable 2FA
-                    </button>
-                  </div>
                 </div>
 
                 {/* Active Sessions */}

@@ -908,7 +908,6 @@ const ProductDetails = () => {
             )}
 
             {/* Render Viral Videos addon if enabled */}
-            {renderAddonSection("viral_videos")}
           </div>
 
           <div className="space-y-6 sm:space-y-6 md:space-y-8 lg:space-y-8">
@@ -983,6 +982,9 @@ const ProductDetails = () => {
 
             {/* Render Aliexpress Suppliers addon if enabled */}
             {renderAddonSection("aliexpress_suppliers")}
+
+            {/* Render Viral Videos addon if enabled - moved to the end */}
+            {renderAddonSection("viral_videos")}
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { DollarSign, BarChart2, Factory, Video, FileText, Image, Bookmark, Lock, Clock } from "lucide-react"
+import { DollarSign, BarChart2, Factory, Video, FileText, Image, Lock, Clock } from "lucide-react"
 
 interface ProductCardProps {
   product: any
@@ -133,7 +133,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isSaved, toggleSaveP
             {/* Action Buttons */}
             <div className="flex gap-2 mt-4">
               {showTimer ? (
-                <div className="bg-orange-100 rounded-full shadow-sm px-4 py-2 flex items-center justify-center">
+                <div className="bg-orange-100 rounded-full shadow-sm px-4 py-2 flex items-center justify-center w-full">
                   <Clock size={16} className="text-gray-500 mr-2" />
                   <span className="text-sm font-medium text-gray-700 whitespace-nowrap mr-2">Available in:</span>
                   <div className="flex items-center">
@@ -166,7 +166,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isSaved, toggleSaveP
                   onClick={() =>
                     handleShowMeMoney(product.id, product.is_locked, product.is_top_product, product.auto_locked)
                   }
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     product.is_locked
                       ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
                       : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
@@ -175,13 +175,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isSaved, toggleSaveP
                   Show Me The Money!
                 </button>
               )}
-
-              <button
-                onClick={(e) => toggleSaveProduct(product.id, e)}
-                className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200"
-              >
-                <Bookmark size={18} className={isSaved ? "fill-[#FF8A00] text-[#FF8A00]" : "text-gray-400"} />
-              </button>
             </div>
           </div>
         </div>
@@ -221,7 +214,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isSaved, toggleSaveP
           {/* Action Buttons */}
           <div className="flex gap-2 mt-4">
             {showTimer ? (
-              <div className="bg-orange-100 rounded-full shadow-sm px-4 py-2 flex items-center justify-center">
+              <div className="bg-orange-100 rounded-full shadow-sm px-4 py-2 flex items-center justify-center w-full">
                 <Clock size={16} className="text-gray-500 mr-2" />
                 <span className="text-sm font-medium text-gray-700 whitespace-nowrap mr-2">Available in:</span>
                 <div className="flex items-center">
@@ -254,18 +247,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isSaved, toggleSaveP
                 onClick={() =>
                   handleShowMeMoney(product.id, product.is_locked, product.is_top_product, product.auto_locked)
                 }
-                className="flex-1 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-[#0F172A] hover:bg-[#1E293B] text-white"
+                className="w-full py-2 rounded-full text-sm font-medium transition-all duration-200 bg-[#0F172A] hover:bg-[#1E293B] text-white"
               >
                 {product.is_locked ? "Become a Pro to Unlock" : "Show Me The Money!"}
               </button>
             )}
-
-            <button
-              onClick={(e) => toggleSaveProduct(product.id, e)}
-              className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200"
-            >
-              <Bookmark size={18} className={isSaved ? "fill-[#FF8A00] text-[#FF8A00]" : "text-gray-400"} />
-            </button>
           </div>
         </div>
       </div>

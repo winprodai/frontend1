@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
-import { DollarSign, BarChart2, Factory, Video, FileText, Bookmark, X, Lock } from "lucide-react"
+import { DollarSign, BarChart2, Factory, Video, FileText, X, Lock } from "lucide-react"
 
 // Update PRODUCTS_PER_PAGE from 5 to 6
 const PRODUCTS_PER_PAGE = 6
@@ -754,25 +754,13 @@ const Home = () => {
                           <div className="flex gap-2 mt-4">
                             <button
                               onClick={() => handleShowMeMoney(product.id)}
-                              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                                 isLockedForFree
                                   ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
                                   : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
                               }`}
                             >
                               {isLockedForFree ? "Become a Pro to Unlock" : "Show Me The Money!"}
-                            </button>
-
-                            <button
-                              onClick={(e) => toggleSaveProduct(product.id, e)}
-                              className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200"
-                            >
-                              <Bookmark
-                                size={18}
-                                className={
-                                  savedProducts.has(product.id) ? "fill-[#FF8A00] text-[#FF8A00]" : "text-gray-400"
-                                }
-                              />
                             </button>
                           </div>
                         </div>
@@ -828,25 +816,13 @@ const Home = () => {
                           <div className="flex gap-2 mt-4">
                             <button
                               onClick={() => handleShowMeMoney(product.id)}
-                              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                                 isLockedForFree
                                   ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
                                   : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
                               }`}
                             >
                               {isLockedForFree ? "Become a Pro to Unlock" : "Show Me The Money!"}
-                            </button>
-
-                            <button
-                              onClick={(e) => toggleSaveProduct(product.id, e)}
-                              className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200"
-                            >
-                              <Bookmark
-                                size={18}
-                                className={
-                                  savedProducts.has(product.id) ? "fill-[#FF8A00] text-[#FF8A00]" : "text-gray-400"
-                                }
-                              />
                             </button>
                           </div>
                         </div>
