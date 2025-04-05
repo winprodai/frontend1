@@ -12,13 +12,21 @@ interface HeaderProps {
 const Header = ({ onMenuClick }: HeaderProps) => {
   const [showSearch, setShowSearch] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isAuthLoading, setIsAuthLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
     // Check authentication status when component mounts
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession()
-      setIsLoggedIn(!!data.session || localStorage.getItem("mockUser") !== null)
+      setIsAuthLoading(true)
+      try {
+        const { data } = await supabase.auth.getSession()
+        setIsLoggedIn(!!data.session || localStorage.getItem("mockUser") !== null)
+      } catch (error) {
+        console.error("Auth check error:", error)
+      } finally {
+        setIsAuthLoading(false)
+      }
     }
 
     checkAuth()
@@ -26,6 +34,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setIsLoggedIn(!!session || localStorage.getItem("mockUser") !== null)
+      setIsAuthLoading(false)
     })
 
     return () => {
@@ -42,20 +51,17 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         {/* Main Header */}
         <div className="h-16 bg-black/95 border-b border-white/10 w-full">
           <div className="h-full px-4 md:px-6 flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center gap-4">
-              <button onClick={onMenuClick} className="lg:hidden p-2 text-white hover:text-primary transition-colors">
+            <div className="flex items-center">
+              <button
+                onClick={onMenuClick}
+                className="lg:hidden p-2 text-white hover:text-primary transition-colors"
+                aria-label="Open menu"
+              >
                 <Menu size={24} />
               </button>
-              <Link to="/" className="flex items-center gap-2">
-                <img
-                  src="https://i.postimg.cc/3JQd5V6C/WINPROD-AI-Twitch-Banner-1.png"
-                  alt="WinProd AI"
-                  className="h-16 w-auto"
-                />
-              </Link>
             </div>
 
-            {!isLoggedIn && (
+            {!isAuthLoading && !isLoggedIn && (
               <div className="flex items-center gap-4">
                 <Link to="/login" className="text-white hover:text-primary transition-colors">
                   Login

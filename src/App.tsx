@@ -37,26 +37,42 @@ import AdminEmailTemplates from "./pages/admin/EmailTemplates"
 import AdminEmailMarketing from "./pages/admin/EmailMarketing"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  useEffect((): any => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
     async function fetchUser() {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser()
+      try {
+        setIsLoading(true)
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser()
 
-      if (!user) {
-        return <Navigate to="/login" replace />
-      }
-
-      if (error) {
-        console.error("Error fetching user:", error)
-      } else {
-        console.log("User:", user)
+        if (error) {
+          console.error("Error fetching user:", error)
+          setIsAuthenticated(false)
+        } else {
+          setIsAuthenticated(!!user)
+        }
+      } catch (error) {
+        console.error("Unexpected error:", error)
+        setIsAuthenticated(false)
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchUser()
   }, [])
+
+  if (isLoading) {
+    return <AuthLoader />
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
 
   return <>{children}</>
 }
