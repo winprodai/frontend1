@@ -324,7 +324,9 @@ function App() {
                     onClose={() => setSidebarOpen(false)}
                     onOpen={() => setSidebarOpen(true)}
                   />
-                  <div className="lg:ml-64">
+                  <div className="lg:ml-64 pt-16 lg:pt-0">
+                    {" "}
+                    {/* Added pt-16 for mobile header spacing */}
                     <main className="p-4 md:p-6">
                       <Dashboard />
                     </main>
@@ -345,7 +347,9 @@ function App() {
                     onClose={() => setSidebarOpen(false)}
                     onOpen={() => setSidebarOpen(true)}
                   />
-                  <div className="lg:ml-64">
+                  <div className="lg:ml-64 pt-16 lg:pt-0">
+                    {" "}
+                    {/* Added pt-16 for mobile header spacing */}
                     <main className="p-4 md:p-6">
                       <Dashboard />
                     </main>
@@ -374,7 +378,9 @@ function App() {
                   onClose={() => setSidebarOpen(false)}
                   onOpen={() => setSidebarOpen(true)}
                 />
-                <div className="lg:ml-64">
+                <div className="lg:ml-64 pt-16 lg:pt-0">
+                  {" "}
+                  {/* Added pt-16 for mobile header spacing */}
                   <main>
                     <ProductDetails />
                   </main>
@@ -396,8 +402,10 @@ function App() {
                     onClose={() => setSidebarOpen(false)}
                     onOpen={() => setSidebarOpen(true)}
                   />
-                  <div className="lg:ml-64">
-                    <main>
+                  <div className="lg:ml-64 pt-16 lg:pt-0">
+                    {" "}
+                    {/* Added pt-16 for mobile header spacing */}
+                    <main className="p-4 md:p-6">
                       <Account />
                     </main>
                     <Footer />
@@ -417,7 +425,9 @@ function App() {
                     onClose={() => setSidebarOpen(false)}
                     onOpen={() => setSidebarOpen(true)}
                   />
-                  <div className="lg:ml-64">
+                  <div className="lg:ml-64 pt-16 lg:pt-0">
+                    {" "}
+                    {/* Added pt-16 for mobile header spacing */}
                     <main className="p-4 md:p-6">
                       <Dashboard />
                     </main>
@@ -438,7 +448,9 @@ function App() {
                     onClose={() => setSidebarOpen(false)}
                     onOpen={() => setSidebarOpen(true)}
                   />
-                  <div className="lg:ml-64">
+                  <div className="lg:ml-64 pt-16 lg:pt-0">
+                    {" "}
+                    {/* Added pt-16 for mobile header spacing */}
                     <main className="p-4 md:p-6">
                       <SavedProducts />
                     </main>
@@ -460,8 +472,10 @@ function App() {
                     onClose={() => setSidebarOpen(false)}
                     onOpen={() => setSidebarOpen(true)}
                   />
-                  <div className="lg:ml-64">
-                    <main>
+                  <div className="lg:ml-64 pt-16 lg:pt-0">
+                    {" "}
+                    {/* Added pt-16 for mobile header spacing */}
+                    <main className="p-4 md:p-6">
                       <Ebooks />
                     </main>
                     <Footer />
@@ -481,8 +495,10 @@ function App() {
                     onClose={() => setSidebarOpen(false)}
                     onOpen={() => setSidebarOpen(true)}
                   />
-                  <div className="lg:ml-64">
-                    <main>
+                  <div className="lg:ml-64 pt-16 lg:pt-0">
+                    {" "}
+                    {/* Added pt-16 for mobile header spacing */}
+                    <main className="p-4 md:p-6">
                       <Support />
                     </main>
                     <Footer />

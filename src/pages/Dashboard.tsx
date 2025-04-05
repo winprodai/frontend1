@@ -15,7 +15,6 @@ import {
   Calendar,
   ChevronDown,
   Lock,
-  Bookmark,
   X,
   Clock,
 } from "lucide-react"
@@ -391,7 +390,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto pt-20">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6">
         <div className="text-center">
@@ -592,7 +591,7 @@ const Dashboard = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 p-4">
+              <div className="p-4">
                 {product.release_time && new Date(product.release_time) > new Date() && userSubscription !== "pro" ? (
                   <CountdownTimer releaseTime={product.release_time} />
                 ) : (
@@ -600,7 +599,7 @@ const Dashboard = () => {
                     onClick={() =>
                       handleShowMeMoney(product.id, product.is_locked, product.is_top_product, product.auto_locked)
                     }
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       product.is_locked || product.is_top_product
                         ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
                         : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
@@ -613,17 +612,6 @@ const Dashboard = () => {
                         : "Show Me The Money!"}
                   </button>
                 )}
-
-                <button
-                  onClick={() => toggleSaveProduct(product.id)}
-                  className={`px-3 rounded-lg transition-all duration-200 ${
-                    savedProducts.has(product.id)
-                      ? "bg-secondary/10 text-secondary hover:bg-secondary/20"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  <Bookmark size={18} className={savedProducts.has(product.id) ? "fill-secondary" : ""} />
-                </button>
               </div>
             </div>
           ))
@@ -659,7 +647,7 @@ const Dashboard = () => {
       )}
 
       {/* Total Products Count */}
-      <div className="text-center mt-6 text-sm text-gray-500">
+      <div className="text-center mt-6 text-sm text-gray-500 mb-6">
         Showing {products.length} of {totalCount} products
       </div>
     </div>

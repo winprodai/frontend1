@@ -1,4 +1,6 @@
-import { ArrowRight, Bookmark, BookOpen } from "lucide-react";
+"use client"
+
+import { ArrowRight, Bookmark, BookOpen } from "lucide-react"
 
 const ebooks: any = [
   // {
@@ -10,26 +12,21 @@ const ebooks: any = [
   //   image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=800",
   //   actionText: 'START READING'
   // },
-];
+]
 
 const Ebooks = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gray-50 py-12">
+      <div className="bg-gray-50 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-3 animate-fade-in">
-            <BookOpen
-              size={32}
-              className="text-primary animate-bounce-subtle"
-            />
-            <h1 className="text-3xl font-bold text-gray-900">
-              WinProd E-Books
-            </h1>
+            <BookOpen size={32} className="text-primary animate-bounce-subtle" />
+            <h1 className="text-3xl font-bold text-gray-900">WinProd E-Books</h1>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {ebooks?.length > 0 ? (
             ebooks.map((ebook, index) => (
@@ -41,7 +38,7 @@ const Ebooks = () => {
                 {/* Ebook Header with Badges */}
                 <div className="relative h-48 overflow-hidden">
                   <img
-                    src={ebook.image}
+                    src={ebook.image || "/placeholder.svg"}
                     alt={ebook.title}
                     className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
                   />
@@ -54,8 +51,8 @@ const Ebooks = () => {
                           badge === "PRO"
                             ? "bg-[#FFD700] text-black"
                             : badge === "NEW"
-                            ? "bg-red-500 text-white"
-                            : "bg-gray-200 text-black"
+                              ? "bg-red-500 text-white"
+                              : "bg-gray-200 text-black"
                         }`}
                       >
                         {badge}
@@ -95,15 +92,12 @@ const Ebooks = () => {
                       ebook.upcoming
                         ? "bg-gray-200 hover:bg-gray-300 text-gray-700 cursor-not-allowed"
                         : ebook.badges.includes("PRO")
-                        ? "bg-[#FFD700] hover:bg-[#FFD700]/90 text-black"
-                        : "bg-[#47D147] hover:bg-[#47D147]/90 text-white"
+                          ? "bg-[#FFD700] hover:bg-[#FFD700]/90 text-black"
+                          : "bg-[#47D147] hover:bg-[#47D147]/90 text-white"
                     }`}
                     disabled={ebook.upcoming}
                   >
-                    {ebook.actionText ||
-                      (ebook.badges.includes("PRO")
-                        ? "Upgrade to access"
-                        : "Start Reading")}
+                    {ebook.actionText || (ebook.badges.includes("PRO") ? "Upgrade to access" : "Start Reading")}
                     <ArrowRight
                       size={18}
                       className="transform group-hover:translate-x-1 transition-transform duration-300"
@@ -115,9 +109,7 @@ const Ebooks = () => {
           ) : (
             <div className="text-center py-12 col-span-3">
               <Bookmark size={48} className="mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No eBooks added yet
-              </h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No eBooks added yet</h3>
               <button
                 onClick={() => (window.location.href = "/dashboard")}
                 className="inline-flex items-center justify-center px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors"
@@ -129,7 +121,8 @@ const Ebooks = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Ebooks;
+export default Ebooks
+

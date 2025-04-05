@@ -52,6 +52,18 @@
   }
 }
 
+/* Add spacing for mobile header */
+@media (max-width: 1023px) {
+  .page-content {
+    padding-top: 4rem; /* 64px to match header height */
+  }
+
+  /* Apply consistent padding to all main content areas */
+  main {
+    padding-top: 1rem;
+  }
+}
+
 @layer utilities {
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out;
@@ -96,3 +108,4 @@
     }
   }
 }
+

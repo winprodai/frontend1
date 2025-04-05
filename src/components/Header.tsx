@@ -47,7 +47,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       {/* Mobile Search Overlay */}
       {showSearch && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setShowSearch(false)} />}
 
-      <header className="fixed top-0 right-0 left-0 z-20 bg-black/80 backdrop-blur-sm lg:hidden">
+      <header className="fixed top-0 right-0 left-0 z-20 bg-black/80 backdrop-blur-sm lg:hidden h-16">
         {/* Main Header */}
         <div className="h-16 bg-black/95 border-b border-white/10 w-full">
           <div className="h-full px-4 md:px-6 flex items-center justify-between max-w-7xl mx-auto">
