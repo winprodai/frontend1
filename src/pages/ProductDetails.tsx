@@ -27,6 +27,7 @@ const ProductDetails = () => {
   const imageRef = useRef<HTMLDivElement>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
   const PRODUCTS_PER_PAGE = 12
+  const [customerData, setCustomerData] = useState<any>(null)
 
   useEffect(() => {
     const fetchUserSubscription = async () => {
@@ -34,14 +35,11 @@ const ProductDetails = () => {
         data: { user },
       } = await supabase.auth.getUser()
       if (user) {
-        const { data: customer, error } = await supabase
-          .from("customers")
-          .select("subscription_tier")
-          .eq("user_id", user.id)
-          .single()
+        const { data: customer, error } = await supabase.from("customers").select("*").eq("user_id", user.id).single()
 
         if (!error && customer) {
           setUserSubscription(customer.subscription_tier)
+          setCustomerData(customer)
         }
       }
     }
@@ -54,15 +52,18 @@ const ProductDetails = () => {
     // Check multiple sources to determine Pro status
     const isProFromSubscription = userSubscription === "pro"
     const isProFromStorage = localStorage.getItem("isPro") === "true"
+    const isProFromCustomerData =
+      customerData && (customerData.subscription_tier === "pro" || customerData.subscription_status === "active")
 
     console.log("Pro status checks in ProductDetails:", {
       isProFromSubscription,
       isProFromStorage,
+      isProFromCustomerData,
       userSubscription,
     })
 
     // Return true if any of the checks indicate Pro status
-    return isProFromSubscription || isProFromStorage
+    return isProFromSubscription || isProFromStorage || isProFromCustomerData
   }
 
   // Update the useEffect that fetches product data
@@ -82,6 +83,7 @@ const ProductDetails = () => {
       // Check if product is locked for this user
       const isProductLockedInitial = data.is_locked || data.is_top_product
       const hasReleaseTime = !!data.release_time
+      const isReleaseTimeInFuture = hasReleaseTime && new Date(data.release_time) > new Date()
 
       // Add the following logic to check if the product should be auto-locked:
       const checkAutoLock = async () => {
@@ -119,7 +121,6 @@ const ProductDetails = () => {
       }
 
       const isAutoLocked = await checkAutoLock()
-      const isProductLocked = data.is_locked || data.is_top_product || isAutoLocked
 
       // Set locked state based on user subscription and product properties
       if (isPro()) {
@@ -127,14 +128,29 @@ const ProductDetails = () => {
         console.log("User is Pro, setting isLocked to false")
         setIsLocked(false)
       } else {
-        // Free users can't access locked products or top products
-        setIsLocked(isProductLocked || hasReleaseTime)
+        // Free users logic
+        if (isReleaseTimeInFuture) {
+          // If product has a future release time, it's locked for free users
+          setIsLocked(true)
+          setReleaseTime(new Date(data.release_time))
 
-        // If product is locked and user is not pro, redirect to upgrade page
-        if (isProductLocked && !hasReleaseTime) {
+          // If product is locked and user is not pro, redirect to upgrade page
           navigate("/pricing")
           return
+        } else if (isProductLockedInitial || isAutoLocked) {
+          // If product is locked (manually or top product or auto-locked) and user is not pro, redirect to upgrade page
+          setIsLocked(true)
+          navigate("/pricing")
+          return
+        } else {
+          // Product is not locked for free users
+          setIsLocked(false)
         }
+      }
+
+      // If product had a release time but it's now in the past, treat it as unlocked
+      if (hasReleaseTime && !isReleaseTimeInFuture) {
+        setIsLocked(false)
       }
 
       // Set release time if available

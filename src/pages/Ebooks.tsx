@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight, Bookmark, BookOpen } from "lucide-react"
+import { ArrowRight, Bookmark } from "lucide-react"
 
 const ebooks: any = [
   // {
@@ -17,11 +17,10 @@ const ebooks: any = [
 const Ebooks = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gray-50 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-3 animate-fade-in">
-            <BookOpen size={32} className="text-primary animate-bounce-subtle" />
-            <h1 className="text-3xl font-bold text-gray-900">WinProd E-Books</h1>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">WinProd E-Books</h1>
           </div>
         </div>
       </div>

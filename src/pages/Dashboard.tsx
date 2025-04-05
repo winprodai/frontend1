@@ -17,6 +17,7 @@ import {
   Lock,
   X,
   Clock,
+  Bookmark,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
@@ -117,12 +118,13 @@ const Dashboard = () => {
       if (user) {
         const { data: customer, error } = await supabase
           .from("customers")
-          .select("subscription_tier")
+          .select("subscription_tier, subscription_status")
           .eq("user_id", user.id)
           .single()
 
         if (!error && customer) {
           setUserSubscription(customer.subscription_tier)
+          setCustomerData(customer)
         }
       }
     }
@@ -130,6 +132,30 @@ const Dashboard = () => {
     fetchUserSubscription()
   }, [])
 
+  // Update the isPro function to be more robust
+  const isPro = () => {
+    // Check multiple sources to determine Pro status
+    const isProFromSubscription = userSubscription === "pro"
+    const isProFromStorage = localStorage.getItem("isPro") === "true"
+    const isProFromCustomerData =
+      customerData && (customerData.subscription_tier === "pro" || customerData.subscription_status === "active")
+
+    // Return true if any of the checks indicate Pro status
+    return isProFromSubscription || isProFromStorage || isProFromCustomerData || forceProStatus
+  }
+
+  // Update the handleShowMeMoney function to handle different product states correctly
+  const handleShowMeMoney = (productId: number, isLocked: boolean, isTopProduct: boolean, autoLocked: boolean) => {
+    // If the product is locked (either manually or automatically) and user is not pro, redirect to pricing
+    if ((isLocked || isTopProduct || autoLocked) && !isPro()) {
+      navigate("/pricing")
+    } else {
+      // Otherwise, navigate to the product details
+      navigate(`/product/${productId}`)
+    }
+  }
+
+  // Update the useEffect that fetches product data to correctly handle product locking
   useEffect(() => {
     const fetchData = async () => {
       // Fetch categories
@@ -207,9 +233,6 @@ const Dashboard = () => {
             break
         }
 
-        // We want to show all products to all users, but with different button text
-        // No filtering needed here - we'll handle access control at the UI level
-
         // Apply pagination
         const from = (currentPage - 1) * PRODUCTS_PER_PAGE
         const to = from + PRODUCTS_PER_PAGE - 1
@@ -254,40 +277,38 @@ const Dashboard = () => {
           filteredProducts = filteredProducts.filter((product: any) => savedProducts.has(product.id))
         }
 
-        // Add the following logic to automatically lock products beyond page 2 for free users:
-        if (userSubscription !== "pro") {
-          // Calculate which products should be locked based on pagination
-          const productsPerPage = PRODUCTS_PER_PAGE
-          const maxUnlockedProducts = productsPerPage * 2 // 2 pages worth of products
+        // Process products based on user subscription and pagination
+        const processedProducts = filteredProducts.map((product: any, index: number) => {
+          const productPosition = from + index
+          const maxUnlockedProducts = PRODUCTS_PER_PAGE * 2 // 2 pages worth of products
 
-          // Mark products as locked if they would appear beyond page 2
-          const productsWithLockStatus = filteredProducts.map((product: any, index: number) => {
-            // Get the product's position in the overall sorted list
-            const productPosition = from + index
+          // Check if product is already marked as pro-only
+          const isScheduled = product.release_time && new Date(product.release_time) > new Date()
+          const isTopProduct = product.is_top_product
+          const isLocked = product.is_locked
+          const isProProduct = isScheduled || isTopProduct || isLocked
 
-            // If the product would appear beyond page 2, mark it as locked for free users
-            if (productPosition >= maxUnlockedProducts) {
-              return {
-                ...product,
-                is_locked: true,
-                auto_locked: true, // Add a flag to indicate this was automatically locked
-              }
+          // For free users, auto-lock free products beyond page 2
+          const isAutoLocked = !isPro() && productPosition >= maxUnlockedProducts && !isProProduct
+
+          // Pro users can see all products
+          if (isPro()) {
+            return {
+              ...product,
+              auto_locked: false,
             }
+          } else {
+            // Free users logic
+            return {
+              ...product,
+              is_locked: isLocked,
+              is_top_product: isTopProduct,
+              auto_locked: isAutoLocked,
+            }
+          }
+        })
 
-            return product
-          })
-
-          setProducts(productsWithLockStatus)
-        } else {
-          // Pro users can see all products - explicitly remove lock flags
-          const unlockedProducts = filteredProducts.map((product) => ({
-            ...product,
-            is_locked: false,
-            auto_locked: false,
-            // Keep is_top_product for display purposes but don't lock it
-          }))
-          setProducts(unlockedProducts)
-        }
+        setProducts(processedProducts)
       } catch (error) {
         console.error("Error fetching and filtering products:", error)
       }
@@ -303,6 +324,8 @@ const Dashboard = () => {
     savedProducts,
     currentPage,
     userSubscription,
+    forceProStatus,
+    customerData,
   ])
 
   const toggleSaveProduct = async (productId: number) => {
@@ -338,16 +361,6 @@ const Dashboard = () => {
           setSavedProducts((prev) => new Set(prev).add(productId))
         }
       }
-    }
-  }
-
-  const handleShowMeMoney = (productId: number, isLocked: boolean, isTopProduct: boolean, autoLocked: boolean) => {
-    // If the product is locked (either manually or automatically) and user is not pro, redirect to pricing
-    if ((isLocked || isTopProduct || autoLocked) && userSubscription !== "pro") {
-      navigate("/pricing")
-    } else {
-      // Otherwise, navigate to the product details
-      navigate(`/product/${productId}`)
     }
   }
 
@@ -510,8 +523,7 @@ const Dashboard = () => {
                     className="w-full h-full object-cover"
                   />
                   {(product.is_locked || product.is_top_product || product.auto_locked) &&
-                    (userSubscription !== "pro" ||
-                      (product.release_time && new Date(product.release_time) > new Date())) && (
+                    (!isPro() || (product.release_time && new Date(product.release_time) > new Date())) && (
                       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center">
                         <Lock size={24} className="text-white mb-1" />
                         {product.release_time && new Date(product.release_time) > new Date() && (
@@ -591,27 +603,36 @@ const Dashboard = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="p-4">
-                {product.release_time && new Date(product.release_time) > new Date() && userSubscription !== "pro" ? (
+              <div className="flex gap-3 p-4">
+                {product.release_time && new Date(product.release_time) > new Date() && !isPro() ? (
                   <CountdownTimer releaseTime={product.release_time} />
                 ) : (
                   <button
                     onClick={() =>
                       handleShowMeMoney(product.id, product.is_locked, product.is_top_product, product.auto_locked)
                     }
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      product.is_locked || product.is_top_product
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      product.is_locked || product.is_top_product || product.auto_locked
                         ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
                         : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
                     }`}
                   >
-                    {product.is_top_product
+                    {product.is_locked || product.is_top_product || product.auto_locked
                       ? "Become a Pro to Unlock"
-                      : product.is_locked
-                        ? "Become a Pro to Unlock"
-                        : "Show Me The Money!"}
+                      : "Show Me The Money!"}
                   </button>
                 )}
+
+                <button
+                  onClick={() => toggleSaveProduct(product.id)}
+                  className={`px-3 rounded-lg transition-all duration-200 ${
+                    savedProducts.has(product.id)
+                      ? "bg-secondary/10 text-secondary hover:bg-secondary/20"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  <Bookmark size={18} className={savedProducts.has(product.id) ? "fill-secondary" : ""} />
+                </button>
               </div>
             </div>
           ))

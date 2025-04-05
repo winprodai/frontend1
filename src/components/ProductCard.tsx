@@ -163,16 +163,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isSaved, toggleSaveP
                 </div>
               ) : (
                 <button
-                  onClick={() =>
-                    handleShowMeMoney(product.id, product.is_locked, product.is_top_product, product.auto_locked)
-                  }
+                  onClick={() => handleShowMeMoney(product.id)}
                   className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    product.is_locked
+                    product.is_locked || product.is_top_product || product.auto_locked
                       ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
                       : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
                   }`}
                 >
-                  Show Me The Money!
+                  {product.is_locked || product.is_top_product || product.auto_locked
+                    ? "Become a Pro to Unlock"
+                    : "Show Me The Money!"}
                 </button>
               )}
             </div>

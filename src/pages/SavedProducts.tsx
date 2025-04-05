@@ -65,12 +65,11 @@ const SavedProducts = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Bookmark size={24} className="text-primary" />
-            <h1 className="text-2xl font-bold text-gray-900">Saved Products</h1>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Saved Products</h1>
+            {/* <p className="text-gray-600">Manage and organize your saved products</p> */}
           </div>
-          <p className="text-gray-600">Manage and organize your saved products</p>
         </div>
 
         {/* Search and Filters */}
