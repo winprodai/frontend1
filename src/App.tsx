@@ -179,6 +179,10 @@ function App() {
     return <AuthLoader />
   }
 
+  // Update the routing logic to make dashboard the home page for authenticated users
+  // and make terms and other pages public
+
+  // First, update the non-authenticated routes section to include public pages
   if (!isLogin) {
     return (
       <AuthProvider>
@@ -186,6 +190,11 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            {/* Make these pages public */}
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             {/* Add product details route for non-authenticated users */}
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/admin">
@@ -200,10 +209,14 @@ function App() {
     )
   }
 
+  // Then, update the authenticated routes to redirect from home to dashboard
   return (
     <AuthProvider>
       <Router>
         <Routes>
+          {/* Redirect from home to dashboard for authenticated users */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
           {/* OAuth Callback Route */}
           <Route path="/auth/callback" element={<AuthCallback />} />
 
@@ -284,7 +297,6 @@ function App() {
           </Route>
 
           {/* Auth Routes */}
-
           <Route
             path="/register"
             element={
@@ -330,8 +342,7 @@ function App() {
 
           <Route path="/pricing" element={<Pricing />} />
 
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
+          {/* Public Routes - Make these accessible to everyone */}
           <Route path="/faq" element={<FAQ />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />

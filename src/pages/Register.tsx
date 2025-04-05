@@ -3,9 +3,8 @@
 import type React from "react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Facebook, Mail } from "lucide-react"
+import { Mail } from "lucide-react"
 import { supabase } from "../lib/supabase"
-import { sendWelcomeEmailAfterSignup } from "../lib/utils"
 
 const Register = () => {
   const navigate = useNavigate()
@@ -55,10 +54,10 @@ const Register = () => {
           email,
           name: fullName,
         }),
-      });
+      })
 
-      const responseData = await response.json();
-      if (!response.ok) throw new Error(responseData.message || "Failed to send welcome email");
+      const responseData = await response.json()
+      if (!response.ok) throw new Error(responseData.message || "Failed to send welcome email")
 
       navigate("/dashboard")
     } catch (error) {
@@ -111,18 +110,14 @@ const Register = () => {
         <div className="mt-8 space-y-6">
           {/* Social Sign Up Buttons */}
           <div className="mt-6 grid grid-cols-1 gap-3">
-          <button
-                    type="button"
-                    onClick={() => handleSocialSignIn('google')}
-                    className="w-full inline-flex justify-center py-2 px-4 border border-white/20 rounded-lg shadow-sm bg-white/5 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-black"
-                  >
-                    <img
-                      src="https://www.google.com/favicon.ico"
-                      alt="Google"
-                      className="h-5 w-5 mr-2"
-                    />
-                    Google
-                  </button>
+            <button
+              type="button"
+              onClick={() => handleSocialSignUp("google")}
+              className="w-full inline-flex justify-center py-2 px-4 border border-white/20 rounded-lg shadow-sm bg-white/5 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-black"
+            >
+              <img src="https://www.google.com/favicon.ico" alt="Google" className="h-5 w-5 mr-2" />
+              Google
+            </button>
             {/* <button
               onClick={() => handleSocialSignUp("facebook")}
               disabled={loading}

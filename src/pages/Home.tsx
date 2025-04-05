@@ -5,10 +5,10 @@ import type React from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
-import { DollarSign, BarChart2, Factory, Video, FileText, Image, Bookmark, X, Lock } from "lucide-react"
+import { DollarSign, BarChart2, Factory, Video, FileText, Bookmark, X, Lock } from "lucide-react"
 
-// Update the PRODUCTS_PER_PAGE constant to 5 (to load 5 products at a time)
-const PRODUCTS_PER_PAGE = 5
+// Update PRODUCTS_PER_PAGE from 5 to 6
+const PRODUCTS_PER_PAGE = 6
 const MAX_PRODUCTS = 22 // Maximum number of products to load
 
 const Home = () => {
@@ -137,7 +137,7 @@ const Home = () => {
     )
   }
 
-  // Update the fetchNextRelease function to get the next scheduled release instead of the most recent release
+  // Update the fetchNextRelease function to get the soonest upcoming release
   const fetchNextRelease = async () => {
     try {
       // Fetch the next scheduled release (product with future release_time)
@@ -151,7 +151,7 @@ const Home = () => {
       if (error) throw error
 
       if (data && data.length > 0) {
-        // Set the next release time
+        // Set the next release time to the soonest upcoming release
         setNextReleaseTime(new Date(data[0].release_time))
       } else {
         // If no scheduled releases, set a default 24h from now
@@ -222,12 +222,15 @@ const Home = () => {
     fetchNextRelease()
   }, [])
 
-  // Update the loadMoreProducts function to check if we've reached the maximum
+  // Update the loadMoreProducts function to add a longer delay (1-2 seconds)
   const loadMoreProducts = async () => {
     if (loadingMore) return
 
     setLoadingMore(true)
     try {
+      // Add a 2-second delay
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
       const nextPage = page + 1
       const start = nextPage * PRODUCTS_PER_PAGE - PRODUCTS_PER_PAGE
       const end = nextPage * PRODUCTS_PER_PAGE - 1
@@ -331,31 +334,25 @@ const Home = () => {
     }
   }
 
-  // Ensure the handleShowMeMoney function always navigates directly to product details
+  // Update the handleShowMeMoney function to redirect to register for non-authenticated users
   const handleShowMeMoney = (productId: number) => {
-    // Check if user is Pro using the improved isPro function
-    const userIsPro = isPro()
-    console.log("User is Pro:", userIsPro)
+    // If user is not authenticated, always redirect to register
+    if (!isAuthenticated) {
+      navigate("/register")
+      return
+    }
 
-    // If user is Pro, always navigate to product details
+    // For authenticated users, check if they are Pro
+    const userIsPro = isPro()
+
+    // If user is Pro, navigate to product details
     if (userIsPro) {
       navigate(`/product/${productId}`)
       return
     }
 
-    // For non-Pro users, check if the product is locked
-    const product = products.find((p) => p.id === productId)
-    if (
-      product &&
-      (product.is_locked ||
-        product.is_top_product ||
-        product.auto_locked ||
-        (product.release_time && new Date(product.release_time) > new Date()))
-    ) {
-      navigate("/pricing")
-    } else {
-      navigate(`/product/${productId}`)
-    }
+    // For non-Pro authenticated users, redirect to pricing
+    navigate("/pricing")
   }
 
   // Format time ago
@@ -588,13 +585,13 @@ const Home = () => {
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight">
               Winning Products
-              <span className="text-primary"> Curated by AI</span>
+              <br />
+              <span className="text-primary">Curated by AI</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-6 sm:mb-8 px-1 sm:px-2 max-w-2xl mx-auto">
               Stop wasting time on bad products. We curate the best new products every day using AI and real market
               data.
             </p>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center mb-10 lg:mb-0 sm:mb-10 md:mb-0 px-4 sm:px-0"></div>
           </div>
 
           {/* Countdown Timer */}
@@ -613,7 +610,7 @@ const Home = () => {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      class="lucide lucide-timer text-primary animate-pulse"
+                      className="lucide lucide-timer text-primary animate-pulse"
                     >
                       <line x1="10" x2="14" y1="2" y2="2"></line>
                       <line x1="12" x2="15" y1="14" y2="11"></line>
@@ -655,15 +652,12 @@ const Home = () => {
           <div className="">pt-6</div>
 
           {/* Products Grid - Responsive */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="font-sans grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {products.length > 0 ? (
-              products.map((product: any, index: number) => {
-                const isLastItem = index === products.length - 1
+              products.slice(0, showCtaOverlay ? 20 : products.length).map((product: any, index: number) => {
+                const isLastItem = index === (showCtaOverlay ? 19 : products.length - 1)
                 const isComingSoon = product.release_time && new Date(product.release_time) > new Date()
                 const productTime = productReleaseTimes[product.id]
-
-                // Check if this product should be partially hidden by the CTA
-                const isPartiallyHidden = index >= 20 && index < 22 && showCtaOverlay
 
                 // Determine if this product is locked for the current user
                 const isLockedForFree = isProductLocked(product)
@@ -672,7 +666,7 @@ const Home = () => {
                   <div
                     key={product.id}
                     ref={isLastItem ? lastProductRef : null}
-                    className={`bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 relative ${isPartiallyHidden ? "z-0" : ""}`}
+                    className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 relative"
                   >
                     <div className="p-4 md:p-5">
                       {/* Mobile View - Full Width Image */}
@@ -709,7 +703,7 @@ const Home = () => {
                         </div>
 
                         <div className="w-2/3">
-                          <h3 className="font-medium text-[#111827] mb-1">{product.name}</h3>
+                          <h3 className="font-sans font-medium text-[#111827] mb-1">{product.name}</h3>
 
                           {isComingSoon && productTime && !isPro() ? (
                             <p className="text-xs text-gray-500 mb-3">
@@ -750,10 +744,6 @@ const Home = () => {
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <FileText size={14} className="text-gray-600" />
-                                  <span className="text-xs text-gray-600">DESCRIPTION</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Image size={14} className="text-gray-600" />
                                   <span className="text-xs text-gray-600">IMAGES</span>
                                 </div>
                               </div>
@@ -790,7 +780,7 @@ const Home = () => {
 
                       {/* Mobile View - Product Info Below Image */}
                       <div className="md:hidden">
-                        <h3 className="font-medium text-[#111827] mb-1">{product.name}</h3>
+                        <h3 className="font-sans font-medium text-[#111827] mb-1">{product.name}</h3>
 
                         {isComingSoon && productTime && !isPro() ? (
                           <p className="text-xs text-gray-500 mb-3">
@@ -833,32 +823,32 @@ const Home = () => {
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 mt-4">
-                          <button
-                            onClick={() => handleShowMeMoney(product.id)}
-                            className="flex-1 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-[#0F172A] hover:bg-[#1E293B] text-white"
-                          >
-                            {isComingSoon || product.is_locked || product.is_top_product || product.auto_locked
-                              ? isPro()
-                                ? "Show Me The Money!"
-                                : "Become a Pro to Unlock"
-                              : "Show Me The Money!"}
-                          </button>
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 mt-4">
+                            <button
+                              onClick={() => handleShowMeMoney(product.id)}
+                              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                isLockedForFree
+                                  ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
+                                  : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
+                              }`}
+                            >
+                              {isLockedForFree ? "Become a Pro to Unlock" : "Show Me The Money!"}
+                            </button>
 
-                          <button
-                            onClick={(e) => toggleSaveProduct(product.id, e)}
-                            className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200"
-                          >
-                            <Bookmark
-                              size={18}
-                              className={
-                                savedProducts.has(product.id) ? "fill-[#FF8A00] text-[#FF8A00]" : "text-gray-400"
-                              }
-                            />
-                          </button>
+                            <button
+                              onClick={(e) => toggleSaveProduct(product.id, e)}
+                              className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200"
+                            >
+                              <Bookmark
+                                size={18}
+                                className={
+                                  savedProducts.has(product.id) ? "fill-[#FF8A00] text-[#FF8A00]" : "text-gray-400"
+                                }
+                              />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -872,43 +862,38 @@ const Home = () => {
               </div>
             )}
           </div>
+          {loadingMore && !showCtaOverlay && (
+            <div className="col-span-1 md:col-span-2 py-6 flex justify-center items-center">
+              <div className="relative">
+                <div className="w-10 h-10 border-4 border-gray-200 rounded-full"></div>
+                <div className="w-10 h-10 border-4 border-t-[#FF8A00] animate-spin rounded-full absolute top-0 left-0"></div>
+              </div>
+              <span className="ml-3 text-white font-medium">Loading more products...</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* CTA Section with blurred background - positioned to overlay products 21 and 22 */}
+      {/* CTA Overlay - positioned right above the footer */}
       {showCtaOverlay && (
-        <div className="relative overflow-hidden my-6 md:my-8 -mt-[200px] md:-mt-[300px]">
-          {/* White blurry background */}
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm"></div>
-
+        <div className="relative overflow-hidden bg-black">
           {/* Content */}
           <div className="relative z-10 mx-auto px-4 py-6 text-center">
-            <h2
-              className="text-xl md:text-2xl font-bold text-[#1E293B] mb-1"
-              style={{ fontFamily: "'Zilla Slab', serif" }}
-            >
-              Our AI is adding winning products on
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4">
+              Our AI is adding winning products on a daily basis.
             </h2>
-            <div className="flex flex-col items-center">
-              <h3
-                className="text-xl md:text-2xl font-bold text-[#FF8A00] mb-1"
-                style={{ fontFamily: "'Zilla Slab', serif" }}
-              >
-                a daily basis.
-              </h3>
-              <div className="w-24 md:w-36 h-1 bg-[#FF8A00] rounded-full mb-4 md:mb-6"></div>
-            </div>
+            <div className="flex flex-col items-center"></div>
             <div className="mx-auto max-w-2xl">
-              <p className="text-sm md:text-lg font-bold text-[#1E293B] mb-2 md:mb-3">
+              <p className="text-sm md:text-lg font-bold text-[#FF8A00] mb-2 md:mb-3">
                 Stop wasting money on bad products
               </p>
-              <p className="text-xs md:text-base text-gray-600 mb-4 md:mb-6">
+              <p className="text-xs md:text-base text-white mb-4 md:mb-6">
                 Want to be a successful store owner? Get instant access to our AI-curated winning products list with
                 detailed analytics and targeting data.
               </p>
               <button
                 onClick={() => navigate("/register")}
-                className="bg-[#FF8A00] hover:bg-[#FF8A00]/90 text-white px-6 py-2 md:px-8 md:py-3 rounded-full font-medium transition-colors text-sm md:text-lg"
+                className="bg-secondary hover:bg-secondary/90 text-white px-6 py-2 md:px-8 md:py-3 rounded-md font-medium transition-colors text-sm md:text-lg"
               >
                 Join Now! It's Free :)
               </button>
