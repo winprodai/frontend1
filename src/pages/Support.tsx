@@ -20,7 +20,7 @@ const Support = () => {
       {/* Left Section - Expert Consultant */}
       <div className="p-6 lg:p-8 max-w-7xl mx-auto">
         <div className="mb-8">
-          <span className="text-gray-500 text-sm">Ecomhunt Consultant</span>
+          {/* <span className="text-gray-500 text-sm">Ecomhunt Consultant</span> */}
           <h2 className="text-2xl font-bold mt-1">1-On-1 Expert Consultant With Jack</h2>
         </div>
 

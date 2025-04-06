@@ -47,7 +47,7 @@ const ProductDetails = () => {
     fetchUserSubscription()
   }, [])
 
-  // Update the isPro function to be more robust
+  // Update the isPro function to be more robust and add logging
   const isPro = () => {
     // Check multiple sources to determine Pro status
     const isProFromSubscription = userSubscription === "pro"
@@ -66,7 +66,7 @@ const ProductDetails = () => {
     return isProFromSubscription || isProFromStorage || isProFromCustomerData
   }
 
-  // Update the useEffect that fetches product data
+  // Update the useEffect that fetches product data to properly handle pro users
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true)

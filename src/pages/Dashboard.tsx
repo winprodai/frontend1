@@ -19,8 +19,10 @@ import {
   Clock,
   Bookmark,
 } from "lucide-react"
-import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
+
+// Add the missing import for useNavigate
+import { useNavigate } from "react-router-dom"
 
 // Update the PRODUCTS_PER_PAGE constant from 20 to 10
 const PRODUCTS_PER_PAGE = 10
@@ -29,10 +31,10 @@ const PRODUCTS_PER_PAGE = 10
 const formatTimeRemaining = (timeRemaining: number) => {
   if (timeRemaining <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 }
 
-  const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000)
+  const days = Math.floor((timeRemaining / (1000 * 60 * 60 * 24)) % 24)
+  const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24)
+  const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60)
+  const seconds = Math.floor((timeRemaining / 1000) % 60)
 
   return { days, hours, minutes, seconds }
 }
@@ -80,6 +82,17 @@ const CountdownTimer = ({ releaseTime }) => {
         <span className="text-xs text-gray-500">Seconds</span>
       </div>
     </div>
+  )
+}
+
+// Add the isProductLocked helper function before the Dashboard component
+// Helper function to check if a product is locked for free users
+const isProductLocked = (product: any) => {
+  return (
+    product.is_locked ||
+    product.is_top_product ||
+    product.auto_locked ||
+    (product.release_time && new Date(product.release_time) > new Date())
   )
 }
 
@@ -132,7 +145,7 @@ const Dashboard = () => {
     fetchUserSubscription()
   }, [])
 
-  // Update the isPro function to be more robust
+  // Update the isPro function to be more robust and add logging
   const isPro = () => {
     // Check multiple sources to determine Pro status
     const isProFromSubscription = userSubscription === "pro"
@@ -140,17 +153,32 @@ const Dashboard = () => {
     const isProFromCustomerData =
       customerData && (customerData.subscription_tier === "pro" || customerData.subscription_status === "active")
 
+    // Add logging to debug pro status detection
+    console.log("Pro status checks:", {
+      isProFromSubscription,
+      isProFromStorage,
+      isProFromCustomerData,
+      userSubscription,
+      customerData,
+    })
+
     // Return true if any of the checks indicate Pro status
     return isProFromSubscription || isProFromStorage || isProFromCustomerData || forceProStatus
   }
 
-  // Update the handleShowMeMoney function to handle different product states correctly
+  // Update the handleShowMeMoney function to properly handle pro users
   const handleShowMeMoney = (productId: number, isLocked: boolean, isTopProduct: boolean, autoLocked: boolean) => {
-    // If the product is locked (either manually or automatically) and user is not pro, redirect to pricing
-    if ((isLocked || isTopProduct || autoLocked) && !isPro()) {
+    // If user is pro, always navigate to product details regardless of lock status
+    if (isPro()) {
+      console.log("Pro user detected, navigating to product details")
+      navigate(`/product/${productId}`)
+      return
+    }
+
+    // For non-pro users, check if product is locked
+    if (isLocked || isTopProduct || autoLocked) {
       navigate("/pricing")
     } else {
-      // Otherwise, navigate to the product details
       navigate(`/product/${productId}`)
     }
   }
@@ -447,10 +475,10 @@ const Dashboard = () => {
         {/* Filters */}
         <div
           className={`
-          flex flex-col gap-3
-          md:flex md:flex-row md:items-center md:justify-between
-          ${showFilters ? "block" : "hidden md:flex"}
-        `}
+        flex flex-col gap-3
+        md:flex md:flex-row md:items-center md:justify-between
+        ${showFilters ? "block" : "hidden md:flex"}
+      `}
         >
           {/* Left Side - My Saved */}
           <button
@@ -509,25 +537,30 @@ const Dashboard = () => {
       {/* Products Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {products.length > 0 ? (
-          products.map((product: any) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-shadow duration-200"
-            >
-              <div className="flex h-[180px]">
-                {/* Product Image */}
-                <div className="relative w-[180px] shrink-0">
-                  <img
-                    src={product.images && product.images.length > 0 ? product.images[0] : "/placeholder.svg"}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {(product.is_locked || product.is_top_product || product.auto_locked) &&
-                    (!isPro() || (product.release_time && new Date(product.release_time) > new Date())) && (
-                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center">
-                        <Lock size={24} className="text-white mb-1" />
-                        {product.release_time && new Date(product.release_time) > new Date() && (
-                          <div className="text-white text-xs text-center px-2">
+          products.map((product: any) => {
+            const isComingSoon = product.release_time && new Date(product.release_time) > new Date()
+            const isLocked = product.is_locked || product.is_top_product || product.auto_locked
+            const shouldShowLock = (isLocked || isComingSoon) && !isPro()
+
+            return (
+              <div
+                key={product.id}
+                className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-shadow duration-200"
+              >
+                <div className="flex h-[180px]">
+                  {/* Product Image */}
+                  <div className="relative w-[180px] shrink-0">
+                    <img
+                      src={product.images && product.images.length > 0 ? product.images[0] : "/placeholder.svg"}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Lock Overlay - Only show for non-pro users */}
+                    {shouldShowLock && (
+                      <div className="absolute inset-0 bg-black/70 backdrop-blur-[3px] flex flex-col items-center justify-center">
+                        <Lock size={24} className={isComingSoon ? "text-orange-400 mb-1" : "text-white mb-1"} />
+                        {isComingSoon && !isPro() && (
+                          <div className={`text-center px-2 ${isComingSoon ? "text-orange-300" : "text-white"}`}>
                             <div>Available in</div>
                             <div className="font-bold">
                               {(() => {
@@ -556,86 +589,92 @@ const Dashboard = () => {
                         )}
                       </div>
                     )}
-                  {product.is_top_product && (
-                    <div className="absolute top-2 left-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
-                      Top Pick
-                    </div>
-                  )}
-                </div>
-
-                {/* Product Info */}
-                <div className="flex-1 p-4 flex flex-col">
-                  <div className="flex justify-between items-start gap-2 mb-3">
-                    <div>
-                      <h3 className="font-medium text-gray-900 text-sm mb-1 line-clamp-1">{product.name}</h3>
-                      <p className="text-xs text-gray-500">
-                        Posted{" "}
-                        {Math.floor((Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24))} days
-                        ago
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[
-                      { icon: DollarSign, label: "PROFITS", color: "text-green-600" },
-                      { icon: BarChart2, label: "ANALYTICS", color: "text-orange-500" },
-                      { icon: MessageSquare, label: "ENGAGEMENT", color: "text-blue-500" },
-                      { icon: Link, label: "LINKS", color: "text-purple-500" },
-                      { icon: Facebook, label: "FB ADS", color: "text-blue-600" },
-                      { icon: Play, label: "VIDEO", color: "text-red-500" },
-                      { icon: Target, label: "TARGETING", color: "text-indigo-500" },
-                      { icon: Tag, label: "RETAIL PRICE", color: "text-yellow-600" },
-                    ].map((stat, index) => (
-                      <div
-                        key={index}
-                        className="flex flex-col items-center justify-center p-2 bg-gray-50/80 rounded hover:bg-gray-100/80 transition-colors h-[46px]"
-                      >
-                        <stat.icon size={20} className={`${stat.color} md:mb-1`} />
-                        <span className="text-[8px] text-gray-600 font-semibold leading-none text-center uppercase tracking-wider hidden md:block">
-                          {stat.label}
-                        </span>
+                    {product.is_top_product && (
+                      <div className="absolute top-2 left-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
+                        Top Pick
                       </div>
-                    ))}
+                    )}
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1 p-4 flex flex-col">
+                    <div className="flex justify-between items-start gap-2 mb-3">
+                      <div>
+                        <h3 className="font-medium text-[#111827] mb-1">
+                          {shouldShowLock ? "Locked Product" : product.name}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          Posted{" "}
+                          {Math.floor((Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24))}{" "}
+                          days ago
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        { icon: DollarSign, label: "PROFITS", color: "text-green-600" },
+                        { icon: BarChart2, label: "ANALYTICS", color: "text-orange-500" },
+                        { icon: MessageSquare, label: "ENGAGEMENT", color: "text-blue-500" },
+                        { icon: Link, label: "LINKS", color: "text-purple-500" },
+                        { icon: Facebook, label: "FB ADS", color: "text-blue-600" },
+                        { icon: Play, label: "VIDEO", color: "text-red-500" },
+                        { icon: Target, label: "TARGETING", color: "text-indigo-500" },
+                        { icon: Tag, label: "RETAIL PRICE", color: "text-yellow-600" },
+                      ].map((stat, index) => (
+                        <div
+                          key={index}
+                          className="flex flex-col items-center justify-center p-2 bg-gray-50/80 rounded hover:bg-gray-100/80 transition-colors h-[46px]"
+                        >
+                          <stat.icon size={20} className={`${stat.color} md:mb-1`} />
+                          <span className="text-[8px] text-gray-600 font-semibold leading-none text-center uppercase tracking-wider hidden md:block">
+                            {stat.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 p-4">
-                {product.release_time && new Date(product.release_time) > new Date() && !isPro() ? (
-                  <CountdownTimer releaseTime={product.release_time} />
-                ) : (
+                {/* Action Buttons */}
+                <div className="flex gap-3 p-4">
                   <button
                     onClick={() =>
                       handleShowMeMoney(product.id, product.is_locked, product.is_top_product, product.auto_locked)
                     }
                     className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      product.is_locked || product.is_top_product || product.auto_locked
-                        ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
-                        : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
+                      isPro()
+                        ? "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
+                        : (isLocked || isComingSoon)
+                          ? "bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow"
+                          : "bg-secondary hover:bg-secondary/90 text-white shadow-sm hover:shadow"
                     }`}
                   >
-                    {product.is_locked || product.is_top_product || product.auto_locked
-                      ? "Become a Pro to Unlock"
-                      : "Show Me The Money!"}
+                    {isPro()
+                      ? "Show Me The Money!"
+                      : isLocked || isComingSoon
+                        ? "Become a Pro to Unlock"
+                        : "Show Me The Money!"}
                   </button>
-                )}
 
-                <button
-                  onClick={() => toggleSaveProduct(product.id)}
-                  className={`px-3 rounded-lg transition-all duration-200 ${
-                    savedProducts.has(product.id)
-                      ? "bg-secondary/10 text-secondary hover:bg-secondary/20"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  <Bookmark size={18} className={savedProducts.has(product.id) ? "fill-secondary" : ""} />
-                </button>
+                  {/* Only show save button for unlocked products or pro users */}
+                  {(!shouldShowLock || isPro()) && (
+                    <button
+                      onClick={() => toggleSaveProduct(product.id)}
+                      className={`px-3 rounded-lg transition-all duration-200 ${
+                        savedProducts.has(product.id)
+                          ? "bg-secondary/10 text-secondary hover:bg-secondary/20"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      <Bookmark size={18} className={savedProducts.has(product.id) ? "fill-secondary" : ""} />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            )
+          })
         ) : (
           <div className="col-span-2 py-12 text-center">
             <p className="text-gray-500 text-lg">No products found matching your criteria.</p>
