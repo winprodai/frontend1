@@ -561,8 +561,8 @@ const Dashboard = () => {
                         <Lock size={24} className={isComingSoon ? "text-orange-400 mb-1" : "text-white mb-1"} />
                         {isComingSoon && !isPro() && (
                           <div className={`text-center px-2 ${isComingSoon ? "text-orange-300" : "text-white"}`}>
-                            <div>Available in</div>
-                            <div className="font-bold">
+                            <div>Available for free members in</div>
+                            <div className="font-bold text-white">
                               {(() => {
                                 const timeRemaining = new Date(product.release_time).getTime() - new Date().getTime()
                                 const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24))

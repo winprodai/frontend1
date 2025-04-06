@@ -103,6 +103,59 @@ const Sidebar = ({ isOpen, onClose, onOpen }: SidebarProps) => {
     fetchUser()
   }, [])
 
+  // Resources dropdown component - reused in both mobile and desktop
+  const ResourcesDropdown = () => (
+    <div className="relative">
+      <button
+        onClick={() => setShowResourcesDropdown(!showResourcesDropdown)}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-colors
+         ${showResourcesDropdown ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-900 hover:text-white"}`}
+      >
+        <div className="flex items-center gap-3">
+          <Layers size={18} />
+          <span className="text-sm font-medium">Resources</span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={`transform transition-transform duration-200 ${showResourcesDropdown ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {/* Dropdown Menu */}
+      {showResourcesDropdown && (
+        <div className="mt-1 py-1 px-2 bg-gray-800 rounded-lg">
+          {socialLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"
+            >
+              <link.icon size={18} />
+              <span className="text-sm font-medium">{link.label}</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
+  // Support link component - reused in both mobile and desktop
+  const SupportLink = () => (
+    <NavLink
+      to="/support"
+      onClick={onClose}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors
+       ${isActive ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-900 hover:text-white"}`
+      }
+    >
+      <MessageCircle size={18} />
+      <span className="text-sm font-medium">Support</span>
+    </NavLink>
+  )
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -119,11 +172,11 @@ const Sidebar = ({ isOpen, onClose, onOpen }: SidebarProps) => {
       {/* Sidebar */}
       <div
         className={`
-        fixed top-0 left-0 h-screen w-64 bg-black text-white z-40
-        transform transition-transform duration-200 ease-in-out
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:translate-x-0 flex flex-col
-      `}
+       fixed top-0 left-0 h-screen w-64 bg-black text-white z-40
+       transform transition-transform duration-200 ease-in-out
+       ${isOpen ? "translate-x-0" : "-translate-x-full"}
+       lg:translate-x-0 flex flex-col
+     `}
       >
         {/* Logo and Main Navigation */}
         <div className="flex-1 overflow-y-auto">
@@ -137,6 +190,7 @@ const Sidebar = ({ isOpen, onClose, onOpen }: SidebarProps) => {
             </div>
 
             <nav className="space-y-1">
+              {/* Main navigation items */}
               {mainNavItems.map((item) => (
                 <NavLink
                   key={item.path}
@@ -144,77 +198,94 @@ const Sidebar = ({ isOpen, onClose, onOpen }: SidebarProps) => {
                   onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors
-                    ${isActive ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-900 hover:text-white"}`
+            ${isActive ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-900 hover:text-white"}`
                   }
                 >
                   <item.icon size={18} />
                   <span className="text-sm font-medium">{item.label}</span>
                 </NavLink>
               ))}
+
+              {/* Mobile-only: Resources and Support right after E-Books */}
+              <div className="lg:hidden">
+                <ResourcesDropdown />
+                <SupportLink />
+
+                {/* Mobile-only: User profile right below all menus with no space */}
+                <div className="mt-1">
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-gray-900 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium">G</span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">{userName}</div>
+                        {customerData?.subscription_status !== "active" ? (
+                          <div className="text-xs text-gray-400">Free Member</div>
+                        ) : (
+                          <div className="text-xs text-gray-400">Pro Member</div>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`text-gray-400 transform transition-transform duration-200 ${
+                        showUserDropdown ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* User Dropdown Menu for Mobile */}
+                  {showUserDropdown && (
+                    <div className="mt-1 bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+                      {customerData?.subscription_status !== "active" && (
+                        <button
+                          onClick={() => navigate("/pricing")}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-gray-700 transition-colors"
+                        >
+                          <Crown size={18} className="text-[#FFD700]" />
+                          <span>Upgrade to Pro</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => navigate("/account")}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-gray-700 transition-colors"
+                      >
+                        <User size={18} />
+                        <span>WinProd Account</span>
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-gray-700 transition-colors border-t border-gray-700"
+                      >
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </nav>
           </div>
         </div>
 
-        {/* Bottom Navigation */}
-        <div className="p-4 border-t border-gray-800">
+        {/* Bottom Navigation - Desktop only */}
+        <div className="p-4 border-t border-gray-800 hidden lg:block">
           <nav className="space-y-1">
-            {/* Resources Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowResourcesDropdown(!showResourcesDropdown)}
-                className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-colors
-                  ${
-                    showResourcesDropdown
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-400 hover:bg-gray-900 hover:text-white"
-                  }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Layers size={18} />
-                  <span className="text-sm font-medium">Resources</span>
-                </div>
-                <ChevronDown
-                  size={16}
-                  className={`transform transition-transform duration-200 ${showResourcesDropdown ? "rotate-180" : ""}`}
-                />
-              </button>
+            {/* Resources Dropdown - Desktop only */}
+            <ResourcesDropdown />
 
-              {/* Dropdown Menu */}
-              {showResourcesDropdown && (
-                <div className="mt-1 py-1 px-2 bg-gray-800 rounded-lg">
-                  {socialLinks.map((link) => (
-                    <a
-                      key={link.label}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      <link.icon size={18} />
-                      <span className="text-sm font-medium">{link.label}</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Support Link */}
-            <NavLink
-              to="/support"
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors
-                ${isActive ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-900 hover:text-white"}`
-              }
-            >
-              <MessageCircle size={18} />
-              <span className="text-sm font-medium">Support</span>
-            </NavLink>
+            {/* Support Link - Desktop only */}
+            <SupportLink />
           </nav>
         </div>
 
-        {/* User Section */}
-        <div className="p-4 pt-6 border-t border-gray-800 bg-black">
+        {/* User Section - Desktop only */}
+        <div className="p-4 pt-6 border-t border-gray-800 bg-black hidden lg:block">
           <div className="relative">
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
@@ -226,7 +297,7 @@ const Sidebar = ({ isOpen, onClose, onOpen }: SidebarProps) => {
                 </div>
                 <div>
                   <div className="text-sm font-medium">{userName}</div>
-                  {customerData.subscription_status !== "active" ? (
+                  {customerData?.subscription_status !== "active" ? (
                     <div className="text-xs text-gray-400">Free Member</div>
                   ) : (
                     <div className="text-xs text-gray-400">Pro Member</div>
@@ -241,10 +312,10 @@ const Sidebar = ({ isOpen, onClose, onOpen }: SidebarProps) => {
               />
             </button>
 
-            {/* User Dropdown Menu */}
+            {/* User Dropdown Menu for Desktop */}
             {showUserDropdown && (
               <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800 rounded-lg overflow-hidden shadow-lg">
-                {customerData.subscription_status !== "active" && (
+                {customerData?.subscription_status !== "active" && (
                   <button
                     onClick={() => navigate("/pricing")}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-gray-700 transition-colors"

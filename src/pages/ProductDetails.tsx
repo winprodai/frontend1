@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ShoppingCart, Bookmark, DollarSign, ShoppingBag, Search, ExternalLink, Play, ZoomIn, Lock } from "lucide-react"
+import { ShoppingCart, Bookmark, Lock, Search, Play, ExternalLink, ZoomIn, ShoppingBag } from "lucide-react"
 import { supabase } from "../lib/supabase"
 
 const ProductDetails = () => {
@@ -28,6 +28,8 @@ const ProductDetails = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
   const PRODUCTS_PER_PAGE = 12
   const [customerData, setCustomerData] = useState<any>(null)
+  const [savedProducts, setSavedProducts] = useState<Set<string>>(new Set())
+  const productId = id
 
   useEffect(() => {
     const fetchUserSubscription = async () => {
@@ -363,7 +365,7 @@ const ProductDetails = () => {
         if (error) {
           console.error("Error saving product:", error)
         } else {
-          setIsSaved(true)
+          setSavedProducts((prev) => new Set(prev).add(productId))
         }
       }
     }
@@ -560,16 +562,14 @@ const ProductDetails = () => {
         const useCustomRevenue = settings.use_custom_revenue || false
 
         return (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <DollarSign size={24} className="text-green-500" />
-              <h2 className="text-lg font-semibold">{addon.title || "Estimated Monthly Revenue"}</h2>
+          <div className="bg-white rounded-2xl border border-gray-300 shadow-md">
+            <div className="bg-gray-100 w-full rounded-t-2xl py-3 border-b border-gray-300 flex justify-center">
+              <h2 className="text-xl font-bold text-black text-center">{addon.title || "Estimated Monthly Revenue"}</h2>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 pb-8">
               {(settings.show_conservative === undefined || settings.show_conservative) && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">CONSERVATIVE</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="bg-white border-2 border-gray-300 shadow-md rounded-xl p-3 text-center flex flex-col items-center justify-center">
+                  <p className="text-3xl font-extrabold text-black">
                     {useCustomRevenue
                       ? formatCurrency(settings.conservative_revenue || 0)
                       : calculateMonthlyRevenue(
@@ -577,27 +577,16 @@ const ProductDetails = () => {
                           profitPerSale,
                         )}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {settings.conservative_sales || product.estimatedSales.low} sales/month
-                  </p>
+                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Conservative</p>
                 </div>
               )}
               {(settings.show_realistic === undefined || settings.show_realistic) && (
                 <div
-                  className={`bg-gray-50 rounded-lg p-4 ${
-                    settings.highlight_realistic === undefined || settings.highlight_realistic
-                      ? "border-2 border-green-100"
-                      : ""
+                  className={`bg-white border-2 border-gray-300 shadow-md rounded-xl p-3 text-center flex flex-col items-center justify-center ${
+                    settings.highlight_realistic === undefined || settings.highlight_realistic ? "border-green-100" : ""
                   }`}
                 >
-                  <p className="text-sm text-gray-500 mb-1">REALISTIC</p>
-                  <p
-                    className={`text-xl font-bold ${
-                      settings.highlight_realistic === undefined || settings.highlight_realistic
-                        ? "text-green-600"
-                        : "text-gray-900"
-                    }`}
-                  >
+                  <p className="text-3xl font-extrabold text-green-600">
                     {useCustomRevenue
                       ? formatCurrency(settings.realistic_revenue || 0)
                       : calculateMonthlyRevenue(
@@ -605,15 +594,12 @@ const ProductDetails = () => {
                           profitPerSale,
                         )}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {settings.realistic_sales || product.estimatedSales.average} sales/month
-                  </p>
+                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Realistic</p>
                 </div>
               )}
               {(settings.show_optimistic === undefined || settings.show_optimistic) && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">OPTIMISTIC</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="bg-white border-2 border-gray-300 shadow-md rounded-xl p-3 text-center flex flex-col items-center justify-center">
+                  <p className="text-3xl font-extrabold text-black">
                     {useCustomRevenue
                       ? formatCurrency(settings.optimistic_revenue || 0)
                       : calculateMonthlyRevenue(
@@ -621,9 +607,7 @@ const ProductDetails = () => {
                           profitPerSale,
                         )}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {settings.optimistic_sales || product.estimatedSales.high} sales/month
-                  </p>
+                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Optimistic</p>
                 </div>
               )}
             </div>
@@ -848,7 +832,7 @@ const ProductDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 mt-[40px] sm:mt-[40px] lg:mt-0">
+    <div className="min-h-screen bg-gray-50 mt-[8px] sm:mt-[8px] lg:mt-0">
       {/* Product details UI */}
       <div className="max-w-7xl mx-auto px-4 pt-[8px] pb-6 md:pt-4 md:pb-12 lg:pt-7 lg:pb-16">
         {/* If product is a top product, show a */}
@@ -962,6 +946,9 @@ const ProductDetails = () => {
             {/* Render Profit & Cost addon if enabled */}
             {renderAddonSection("profit_cost")}
 
+            {/* Render Monthly Revenue addon if enabled - moved right after profit_cost */}
+            {renderAddonSection("monthly_revenue")}
+
             {/* Product Description Section */}
             {product?.description && (
               <div className="bg-white rounded-2xl border border-gray-300 shadow-md mt-6">
@@ -989,9 +976,6 @@ const ProductDetails = () => {
 
             {/* Render Search Volume addon if enabled */}
             {renderAddonSection("search_volume")}
-
-            {/* Render Monthly Revenue addon if enabled */}
-            {renderAddonSection("monthly_revenue")}
 
             {/* Render Marketplace Links addon if enabled */}
             {renderAddonSection("marketplace_links")}
