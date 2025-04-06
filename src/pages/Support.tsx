@@ -21,7 +21,7 @@ const Support = () => {
       <div className="p-6 lg:p-8 max-w-7xl mx-auto">
         <div className="mb-8">
           {/* <span className="text-gray-500 text-sm">Ecomhunt Consultant</span> */}
-          <h2 className="text-2xl font-bold mt-1">1-On-1 Expert Consultant With Jack</h2>
+          <h2 className="text-2xl font-bold mt-1">1-On-1 Expert Consultant With Josh</h2>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 flex items-center gap-3 shadow-sm">
